@@ -1,0 +1,109 @@
+import re
+from pathlib import Path
+from tkinter import Tk,filedialog
+
+MD_LINK=r"!?\[[^\]]*\]\([^)]*\)"
+DELIM=r"(?:\(|\)|\[|\]|\\\{|\\\}|\\langle|\\rangle|\||\.)"
+WRAPPED=MD_LINK+r"|\\left\s*"+DELIM+r"|\\right\s*"+DELIM+r"|\\[bB]ig(?:g|l|r)?\s*"+DELIM
+BARE=r"(?<!\\)(\(|\)|\[|\])|(\\\{|\\\})|(\\langle|\\rangle)"
+PAT=re.compile(WRAPPED+"|"+BARE)
+BAR=re.compile(r"(?<!\\)((?:\\\\)*\\?)\|")
+WRAPPED_PRE=re.compile(r"(?:\\left|\\right|\\[bB]ig(?:g|l|r)?)\s*$")
+def math_spans(text:str):
+    r"""返回 $...$ 与 $$...$$ 数学片段的 (start, end) 列表；\$ 转义不视为定界符。"""
+    spans=[]
+    i,n=0,len(text)
+    while i<n:
+        c=text[i]
+        if c=="\\":
+            i+=2
+            continue
+        if c=="$":
+            if i+1<n and text[i+1]=="$":
+                j=text.find("$$",i+2)
+                if j<0:
+                    break
+                spans.append((i,j+2))
+                i=j+2
+            else:
+                j=text.find("$",i+1)
+                if j<0:
+                    break
+                spans.append((i,j+1))
+                i=j+1
+        else:
+            i+=1
+    return spans
+def convert_span(span:str)->str:
+    r"""只转换单个数学片段内的裸括号与裸 |（均只在该数学环境内配对）。"""
+    # 1) 裸 | / \|：按出现顺序交替加 \left / \right
+    bars=[m for m in BAR.finditer(span) if not WRAPPED_PRE.search(m.string,0,m.start())]
+    if len(bars)%2:
+        print(f"警告: 数学片段内 | 数量为奇数（无法可靠配对，整段跳过）: {span[:60]!r}")
+    else:
+        for k in range(len(bars)-1,-1,-1):
+            m=bars[k]
+            tok=m.group(1)+"|"
+            lr="\\left" if k%2==0 else "\\right"
+            span=span[:m.start()]+lr+tok+span[m.end():]
+    # 2) 裸括号 ( ) [ ] \{ \} \langle \rangle：只在数学片段内加 \left / \right
+    def repl(m):
+        s=m.group(0)
+        if s in("(", "["):
+            return "\\left"+s
+        if s in(")", "]"):
+            return "\\right"+s
+        if s=="\\{":
+            return "\\left\\{"
+        if s=="\\}":
+            return "\\right\\}"
+        if s=="\\langle":
+            return "\\left\\langle"
+        if s=="\\rangle":
+            return "\\right\\rangle"
+        return s
+    return PAT.sub(repl,span)
+def convert(text:str)->str:
+    r"""仅对 $...$ / $$...$$ 数学片段做转换；数学环境外的文本一律不动。"""
+    out=[]
+    pos=0
+    for a,b in math_spans(text):
+        out.append(text[pos:a])
+        out.append(convert_span(text[a:b]))
+        pos=b
+    out.append(text[pos:])
+    return "".join(out)
+def process_file(path:Path):
+    raw=path.read_bytes()
+    bom=raw.startswith(b"\xef\xbb\xbf")
+    data=raw[3:] if bom else raw
+    try:
+        text=data.decode("utf-8")
+    except UnicodeDecodeError:
+        print(f"跳过（非 UTF-8）: {path}")
+        return
+    new=convert(text)
+    if new==text:
+        print(f"无需修改: {path}")
+        return
+    path.write_bytes((("\ufeff" if bom else "")+new).encode("utf-8"))
+    n1=new.count("\\left(")-text.count("\\left(")
+    n2=new.count("\\left[")-text.count("\\left[")
+    n3=new.count("\\left\\{")-text.count("\\left\\{")
+    n4=new.count("\\left|")-text.count("\\left|")
+    n5=new.count("\\left\\|")-text.count("\\left\\|")
+    n6=new.count("\\left\\langle")-text.count("\\left\\langle")
+    n7=new.count("\\right\\rangle")-text.count("\\right\\rangle")
+    print(f"已转换: {path}  (+\\left( ×{n1}, +\\left[ ×{n2}, +\\left\\{{ ×{n3}, +\\left| ×{n4}, +\\left\\| ×{n5}, +\\left\\langle ×{n6}, +\\right\\rangle ×{n7})")
+def select_and_convert_mds():
+    root=Tk()
+    root.withdraw()
+    selected_files=filedialog.askopenfilenames(title="请选择要转换的 Markdown 文件",filetypes=[("Markdown 文件","*.md"),("All Files","*.*")])
+    if not selected_files:
+        print("未选择任何文件，退出。")
+        return []
+    for md_path in selected_files:
+        process_file(Path(md_path))
+    print(f"转换完成，共处理 {len(selected_files)} 个文件。")
+if __name__=="__main__":
+    select_and_convert_mds()
