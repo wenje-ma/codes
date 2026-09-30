@@ -1,7 +1,6 @@
 from pathlib import Path
 from tkinter import Tk,filedialog,messagebox
 from pypdf import PdfReader
-
 def pdf_to_txt(pdf_path:str,txt_path:str|None=None):
   pdf_file=Path(pdf_path)
   if not pdf_file.exists():
@@ -21,7 +20,6 @@ def pdf_to_txt(pdf_path:str,txt_path:str|None=None):
 def select_and_convert_pdfs():
   root=Tk()
   root.withdraw()
-  # 先让用户选择目标类型：是单个/多个 PDF 文件，还是整个文件夹
   pick_files=messagebox.askyesno(
     title="选择处理对象",
     message="请选择要处理的对象类型：\n\n「是」→ 选择 PDF 文件（可多选）\n「否」→ 选择文件夹（自动处理其中所有 .pdf）")

@@ -1,7 +1,6 @@
 import re
 from pathlib import Path
 from tkinter import Tk,filedialog,messagebox
-
 MD_LINK=r"!?\[[^\]]*\]\([^)]*\)"
 DELIM=r"(?:\(|\)|\[|\]|\\\{|\\\}|\\langle|\\rangle|\||\.)"
 WRAPPED=MD_LINK+r"|\\left\s*"+DELIM+r"|\\right\s*"+DELIM+r"|\\[bB]ig(?:g|l|r)?\s*"+DELIM
@@ -10,7 +9,6 @@ PAT=re.compile(WRAPPED+"|"+BARE)
 BAR=re.compile(r"(?<!\\)((?:\\\\)*\\?)\|")
 WRAPPED_PRE=re.compile(r"(?:\\left|\\right|\\[bB]ig(?:g|l|r)?)\s*$")
 def math_spans(text:str):
-  r"""返回 $...$ 与 $$...$$ 数学片段的 (start, end) 列表；\$ 转义不视为定界符。"""
   spans=[]
   i,n=0,len(text)
   while i<n:
@@ -35,8 +33,6 @@ def math_spans(text:str):
       i+=1
   return spans
 def convert_span(span:str)->str:
-  r"""只转换单个数学片段内的裸括号与裸 |（均只在该数学环境内配对）。"""
-  # 1) 裸 | / \|：按出现顺序交替加 \left / \right
   bars=[m for m in BAR.finditer(span) if not WRAPPED_PRE.search(m.string,0,m.start())]
   if len(bars)%2:
     print(f"警告: 数学片段内 | 数量为奇数（无法可靠配对，整段跳过）: {span[:60]!r}")
@@ -46,7 +42,6 @@ def convert_span(span:str)->str:
       tok=m.group(1)+"|"
       lr="\\left" if k%2==0 else "\\right"
       span=span[:m.start()]+lr+tok+span[m.end():]
-  # 2) 裸括号 ( ) [ ] \{ \} \langle \rangle：只在数学片段内加 \left / \right
   def repl(m):
     s=m.group(0)
     if s in("(", "["):
@@ -64,7 +59,6 @@ def convert_span(span:str)->str:
     return s
   return PAT.sub(repl,span)
 def convert(text:str)->str:
-  r"""仅对 $...$ / $$...$$ 数学片段做转换；数学环境外的文本一律不动。"""
   out=[]
   pos=0
   for a,b in math_spans(text):
@@ -98,7 +92,6 @@ def process_file(path:Path):
 def select_and_convert_mds():
   root=Tk()
   root.withdraw()
-  # 先让用户选择目标类型：是单个/多个 Markdown 文件，还是整个文件夹
   pick_files=messagebox.askyesno(
     title="选择处理对象",
     message="请选择要处理的对象类型：\n\n「是」→ 选择 Markdown 文件（可多选）\n「否」→ 选择文件夹（自动处理其中所有 .md）")

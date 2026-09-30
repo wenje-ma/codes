@@ -1,7 +1,6 @@
 from pathlib import Path
 from tkinter import Tk,filedialog,messagebox
 import re
-
 def merge_markdown_files(selected_md_paths:list[str],output_md_path:str|None=None):
   if len(selected_md_paths)==0:
     raise ValueError("没有传入待合并的Markdown文件")
@@ -30,7 +29,6 @@ def merge_markdown_files(selected_md_paths:list[str],output_md_path:str|None=Non
 def select_and_merge_md():
   root=Tk()
   root.withdraw()
-  # 先让用户选择目标类型：是单个/多个 Markdown 文件，还是整个文件夹
   pick_files=messagebox.askyesno(
     title="选择处理对象",
     message="请选择要处理的对象类型：\n\n「是」→ 选择 Markdown 文件（可多选）\n「否」→ 选择文件夹（自动合并其中所有 .md）")

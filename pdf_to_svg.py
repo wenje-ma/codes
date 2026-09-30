@@ -4,7 +4,6 @@ import subprocess
 import sys
 from pathlib import Path
 from tkinter import Tk,filedialog,messagebox
-
 PDF2SVG_CANDIDATES=[Path(r"C:\rtools45\mingw64\bin\pdf2svg.exe")]
 def find_pdf2svg():
   for p in PDF2SVG_CANDIDATES:
