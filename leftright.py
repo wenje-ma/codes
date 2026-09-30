@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from tkinter import Tk,filedialog
+from tkinter import Tk,filedialog,messagebox
 
 MD_LINK=r"!?\[[^\]]*\]\([^)]*\)"
 DELIM=r"(?:\(|\)|\[|\]|\\\{|\\\}|\\langle|\\rangle|\||\.)"
@@ -98,12 +98,29 @@ def process_file(path:Path):
 def select_and_convert_mds():
   root=Tk()
   root.withdraw()
-  selected_files=filedialog.askopenfilenames(title="请选择要转换的 Markdown 文件",filetypes=[("Markdown 文件","*.md"),("All Files","*.*")])
-  if not selected_files:
-    print("未选择任何文件，退出。")
-    return []
-  for md_path in selected_files:
-    process_file(Path(md_path))
-  print(f"转换完成，共处理 {len(selected_files)} 个文件。")
+  # 先让用户选择目标类型：是单个/多个 Markdown 文件，还是整个文件夹
+  pick_files=messagebox.askyesno(
+    title="选择处理对象",
+    message="请选择要处理的对象类型：\n\n「是」→ 选择 Markdown 文件（可多选）\n「否」→ 选择文件夹（自动处理其中所有 .md）")
+  if pick_files:
+    selected_files=filedialog.askopenfilenames(title="请选择要转换的 Markdown 文件",filetypes=[("Markdown 文件","*.md"),("All Files","*.*")])
+    if not selected_files:
+      print("未选择任何文件，退出。")
+      return []
+    for md_path in selected_files:
+      process_file(Path(md_path))
+    print(f"转换完成，共处理 {len(selected_files)} 个文件。")
+  else:
+    folder=filedialog.askdirectory(title="请选择包含 Markdown 文件的文件夹")
+    if not folder:
+      print("未选择任何文件夹，退出。")
+      return []
+    md_files=sorted(Path(folder).rglob("*.md"))
+    if not md_files:
+      print(f"文件夹内未找到任何 .md 文件: {folder}")
+      return []
+    for md_path in md_files:
+      process_file(md_path)
+    print(f"转换完成，共处理 {len(md_files)} 个 .md 文件。")
 if __name__=="__main__":
   select_and_convert_mds()

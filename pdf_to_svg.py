@@ -3,7 +3,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from tkinter import Tk,filedialog
+from tkinter import Tk,filedialog,messagebox
 
 PDF2SVG_CANDIDATES=[Path(r"C:\rtools45\mingw64\bin\pdf2svg.exe")]
 def find_pdf2svg():
@@ -57,11 +57,25 @@ def main():
     figures=script_dir/"figures"
     root=Tk()
     root.withdraw()
-    files=filedialog.askopenfilenames(title="请选择要转换为 SVG 的 PDF 文件",initialdir=str(figures if figures.is_dir() else script_dir),filetypes=[("PDF 文件","*.pdf"),("All Files","*.*")])
-    if not files:
-      print("未选择任何文件，退出。")
-      return
-    selected=[Path(f) for f in files]
+    # 先让用户选择目标类型：是单个/多个 PDF 文件，还是整个文件夹
+    pick_files=messagebox.askyesno(
+      title="选择处理对象",
+      message="请选择要处理的对象类型：\n\n「是」→ 选择 PDF 文件（可多选）\n「否」→ 选择文件夹（自动处理其中所有 .pdf）")
+    if pick_files:
+      files=filedialog.askopenfilenames(title="请选择要转换为 SVG 的 PDF 文件",initialdir=str(figures if figures.is_dir() else script_dir),filetypes=[("PDF 文件","*.pdf"),("All Files","*.*")])
+      if not files:
+        print("未选择任何文件，退出。")
+        return
+      selected=[Path(f) for f in files]
+    else:
+      folder=filedialog.askdirectory(title="请选择包含 PDF 文件的文件夹",initialdir=str(figures if figures.is_dir() else script_dir))
+      if not folder:
+        print("未选择任何文件夹，退出。")
+        return
+      selected=sorted(Path(folder).rglob("*.pdf"))
+      if not selected:
+        print(f"文件夹内未找到任何 .pdf 文件: {folder}")
+        return
   print(f"使用: {pdf2svg}")
   done=0
   for pdf in selected:

@@ -1,5 +1,5 @@
 from pathlib import Path
-from tkinter import Tk,filedialog
+from tkinter import Tk,filedialog,messagebox
 from pypdf import PdfReader
 
 def pdf_to_txt(pdf_path:str,txt_path:str|None=None):
@@ -21,13 +21,28 @@ def pdf_to_txt(pdf_path:str,txt_path:str|None=None):
 def select_and_convert_pdfs():
   root=Tk()
   root.withdraw()
-  selected_files=filedialog.askopenfilenames(title='请选择要转换的 PDF 文件',filetypes=[('PDF 文件','*.pdf'),('All Files','*.*')])
-  if not selected_files:
-    print('未选择任何文件，退出。')
-    return []
+  # 先让用户选择目标类型：是单个/多个 PDF 文件，还是整个文件夹
+  pick_files=messagebox.askyesno(
+    title="选择处理对象",
+    message="请选择要处理的对象类型：\n\n「是」→ 选择 PDF 文件（可多选）\n「否」→ 选择文件夹（自动处理其中所有 .pdf）")
+  if pick_files:
+    selected_files=filedialog.askopenfilenames(title='请选择要转换的 PDF 文件',filetypes=[('PDF 文件','*.pdf'),('All Files','*.*')])
+    if not selected_files:
+      print('未选择任何文件，退出。')
+      return []
+    targets=[Path(f) for f in selected_files]
+  else:
+    folder=filedialog.askdirectory(title='请选择包含 PDF 文件的文件夹')
+    if not folder:
+      print('未选择任何文件夹，退出。')
+      return []
+    targets=sorted(Path(folder).rglob('*.pdf'))
+    if not targets:
+      print(f'文件夹内未找到任何 .pdf 文件: {folder}')
+      return []
   converted=[]
-  for pdf_path in selected_files:
-    output=pdf_to_txt(pdf_path)
+  for pdf_path in targets:
+    output=pdf_to_txt(str(pdf_path))
     converted.append(output)
   print(f'转换完成，共处理 {len(converted)} 个文件。')
   return converted
