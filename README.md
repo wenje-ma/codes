@@ -1,6 +1,6 @@
 # codes
 
-A small collection of utility scripts for processing Markdown and PDF files. All scripts are Python 3 and open a native file dialog via `tkinter` to select either individual files (multi-select supported) or a whole folder — when a folder is chosen, the script recursively processes every matching file in it.
+A small collection of utility scripts for processing Markdown and PDF files. All scripts are Python 3 and open a native multi-select file dialog via `tkinter`. You can pick several files at once, and repeat the dialog as many times as needed to add files from other folders; the scripts then process all of the accumulated files.
 
 ## Requirements
 
@@ -47,8 +47,13 @@ Run any script from the command line:
 python leftright.py
 ```
 
-A dialog first asks whether you want to pick **files** or a **folder**:
+A multi-select file dialog opens (pick several files of the relevant type at
+once). After each selection you are asked whether to keep adding files from
+other folders:
 
-- **Yes** → choose one or more files of the relevant type.
-- **No** → choose a folder; all matching files under it (including
-  subfolders) are processed automatically.
+- **Yes** → the dialog opens again so you can append files from another folder.
+- **No** → all accumulated files are processed.
+
+Canceling the file dialog ends the selection: if you already picked files they
+are processed, otherwise the script exits without doing anything. Duplicate
+selections are skipped automatically.

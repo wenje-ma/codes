@@ -20,24 +20,28 @@ def pdf_to_txt(pdf_path:str,txt_path:str|None=None):
 def select_and_convert_pdfs():
   root=Tk()
   root.withdraw()
-  pick_files=messagebox.askyesno(
-    title="选择处理对象",
-    message="请选择要处理的对象类型：\n\n「是」→ 选择 PDF 文件（可多选）\n「否」→ 选择文件夹（自动处理其中所有 .pdf）")
-  if pick_files:
-    selected_files=filedialog.askopenfilenames(title='请选择要转换的 PDF 文件',filetypes=[('PDF 文件','*.pdf'),('All Files','*.*')])
-    if not selected_files:
-      print('未选择任何文件，退出。')
-      return []
-    targets=[Path(f) for f in selected_files]
-  else:
-    folder=filedialog.askdirectory(title='请选择包含 PDF 文件的文件夹')
-    if not folder:
-      print('未选择任何文件夹，退出。')
-      return []
-    targets=sorted(Path(folder).rglob('*.pdf'))
-    if not targets:
-      print(f'文件夹内未找到任何 .pdf 文件: {folder}')
-      return []
+  targets:list[Path]=[]
+  seen:set[str]=set()
+  while True:
+    selected_files=filedialog.askopenfilenames(title='请选择要转换的 PDF 文件（可多选；如需跨文件夹请再次选择，取消则结束选择）',filetypes=[('PDF 文件','*.pdf'),('All Files','*.*')])
+    if selected_files:
+      for f in selected_files:
+        p=Path(f)
+        if p.suffix.lower()!='.pdf':
+          continue
+        key=str(p.resolve())
+        if key not in seen:
+          seen.add(key)
+          targets.append(p)
+      if not messagebox.askyesno(
+        title='继续选择',
+        message=f'已选择 {len(targets)} 个 PDF 文件。\n\n「是」→ 继续从其他文件夹选择\n「否」→ 开始转换'):
+        break
+    else:
+      break
+  if not targets:
+    print('未选择任何文件，退出。')
+    return []
   converted=[]
   for pdf_path in targets:
     output=pdf_to_txt(str(pdf_path))

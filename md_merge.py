@@ -29,25 +29,29 @@ def merge_markdown_files(selected_md_paths:list[str],output_md_path:str|None=Non
 def select_and_merge_md():
   root=Tk()
   root.withdraw()
-  pick_files=messagebox.askyesno(
-    title="选择处理对象",
-    message="请选择要处理的对象类型：\n\n「是」→ 选择 Markdown 文件（可多选）\n「否」→ 选择文件夹（自动合并其中所有 .md）")
-  if pick_files:
-    selected_files=filedialog.askopenfilenames(title="请选择需要合并的 Markdown 文件（按住Ctrl多选，顺序就是合并顺序）",filetypes=[("Markdown 文件","*.md"),("All Files","*.*")])
-    if not selected_files:
-      print("未选择任何文件，程序退出。")
-      return []
-    merged_output=merge_markdown_files(list(selected_files))
-    return [merged_output]
-  folder=filedialog.askdirectory(title="请选择包含 Markdown 文件的文件夹")
-  if not folder:
-    print("未选择任何文件夹，程序退出。")
+  targets:list[Path]=[]
+  seen:set[str]=set()
+  while True:
+    selected_files=filedialog.askopenfilenames(title="请选择需要合并的 Markdown 文件（按住Ctrl多选，顺序就是合并顺序；如需跨文件夹请再次选择，取消则结束选择）",filetypes=[("Markdown 文件","*.md"),("All Files","*.*")])
+    if selected_files:
+      for f in selected_files:
+        p=Path(f)
+        if p.suffix.lower()!=".md":
+          continue
+        key=str(p.resolve())
+        if key not in seen:
+          seen.add(key)
+          targets.append(p)
+      if not messagebox.askyesno(
+        title="继续选择",
+        message=f"已选择 {len(targets)} 个 Markdown 文件。\n\n「是」→ 继续从其他文件夹选择\n「否」→ 开始合并"):
+        break
+    else:
+      break
+  if not targets:
+    print("未选择任何 Markdown 文件，程序退出。")
     return []
-  md_files=sorted(Path(folder).rglob("*.md"))
-  if not md_files:
-    print(f"文件夹内未找到任何 .md 文件: {folder}")
-    return []
-  merged_output=merge_markdown_files([str(p) for p in md_files])
+  merged_output=merge_markdown_files([str(p) for p in targets])
   return [merged_output]
 if __name__=="__main__":
   select_and_merge_md()
