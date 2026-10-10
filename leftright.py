@@ -89,33 +89,22 @@ def process_file(path:Path):
   n6=new.count("\\left\\langle")-text.count("\\left\\langle")
   n7=new.count("\\right\\rangle")-text.count("\\right\\rangle")
   print(f"已转换: {path}  (+\\left( ×{n1}, +\\left[ ×{n2}, +\\left\\{{ ×{n3}, +\\left| ×{n4}, +\\left\\| ×{n5}, +\\left\\langle ×{n6}, +\\right\\rangle ×{n7})")
-def select_and_convert_mds():
+def select_folder_and_convert_mds():
   root=Tk()
   root.withdraw()
-  targets:list[Path]=[]
-  seen:set[str]=set()
-  while True:
-    selected_files=filedialog.askopenfilenames(title="请选择要转换的 Markdown 文件（可多选；如需跨文件夹请再次选择，取消则结束选择）",filetypes=[("Markdown 文件","*.md"),("All Files","*.*")])
-    if selected_files:
-      for f in selected_files:
-        p=Path(f)
-        if p.suffix.lower()!=".md":
-          continue
-        key=str(p.resolve())
-        if key not in seen:
-          seen.add(key)
-          targets.append(p)
-      if not messagebox.askyesno(
-        title="继续选择",
-        message=f"已选择 {len(targets)} 个 Markdown 文件。\n\n「是」→ 继续从其他文件夹选择\n「否」→ 开始转换"):
-        break
-    else:
-      break
-  if not targets:
-    print("未选择任何 Markdown 文件，退出。")
+  folder=filedialog.askdirectory(title="请选择要处理的文件夹（将递归处理其中所有 .md 文件）")
+  if not folder:
+    print("未选择文件夹，退出。")
     return []
+  folder_path=Path(folder)
+  targets=[p for p in folder_path.rglob("*.md") if p.is_file()]
+  targets.sort(key=lambda p: str(p).lower())
+  if not targets:
+    print(f"所选文件夹中没有 Markdown 文件: {folder_path}")
+    return []
+  print(f"共找到 {len(targets)} 个 Markdown 文件，开始转换…")
   for md_path in targets:
     process_file(md_path)
   print(f"转换完成，共处理 {len(targets)} 个文件。")
 if __name__=="__main__":
-  select_and_convert_mds()
+  select_folder_and_convert_mds()
