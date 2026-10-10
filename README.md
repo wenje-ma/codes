@@ -13,7 +13,7 @@ A small collection of utility scripts for processing Markdown and PDF files. All
 Install the packages required by the scripts you actually use:
 
 ```bash
-pip install PyMuPDF                  # for pdf_OCR.py
+pip install PyMuPDF                  # for pdf_OCR.py, pdf_split.py
 pip install rapidocr-onnxruntime     # for pdf_OCR.py
 pip install pypdf                    # for pdf_to_txt.py
 ```
@@ -23,6 +23,7 @@ pip install pypdf                    # for pdf_to_txt.py
 | `leftright.py` | — | — |
 | `md_merge.py` | — | — |
 | `pdf_OCR.py` | `PyMuPDF`, `rapidocr-onnxruntime` | — |
+| `pdf_split.py` | `PyMuPDF` | — |
 | `pdf_to_txt.py` | `pypdf` | — |
 | `pdf_to_svg.py` | — | `pdf2svg` (see below) |
 | `md_to_pdf.exe` | — | — |
@@ -37,6 +38,7 @@ pip install pypdf                    # for pdf_to_txt.py
 - **`md_merge.py`** — Concatenates selected Markdown files into a single `document.md`, which is in the same directory as the first file.
 - **`pdf_OCR.py`** — OCRs scanned PDFs and writes a searchable text layer back into an `_ocr.pdf` copy.
 - **`pdf_to_svg.py`** — Converts each page of a PDF into SVG files using `pdf2svg`. Also accepts PDF paths as command-line arguments instead of the dialog.
+- **`pdf_split.py`** — Splits a PDF larger than the size limit into consecutive parts, each under the limit, by finding the largest page range that fits. The default limit is **95 MB** (below GitHub's 100 MB hard limit) and can be overridden with `--limit <MB>`. Also accepts PDF paths as command-line arguments.
 - **`pdf_to_txt.py`** — Extracts text from PDF pages into a sibling `.txt` file.
 
 ## Usage
